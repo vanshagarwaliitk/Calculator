@@ -1,0 +1,365 @@
+App.js
+import Create from "./Create";
+import Navbar from "./Navbar";
+import Home from "./Home";
+import{BrowserRouter as Router ,Route,Switch } from 'react-router-dom';
+import BlogDetails from "./BlogDetails";
+import NotFound from "./Notfound";
+
+function App() {
+  return (
+    <Router>
+    <div className="App">
+       <Navbar />
+      <div className="content">
+        
+        <Switch>
+          <Route exact path="/">
+            <Home />
+          </Route>
+          <Route  path="/create">
+            <Create />
+          </Route>
+          <Route  path="/blogs/:id">
+            <BlogDetails />
+          </Route>
+          <Route path="*">
+            <NotFound />
+
+          </Route>
+        </Switch>
+      </div>
+    </div>
+    </Router>
+      
+  );
+}
+
+export default App;
+
+
+
+
+BlogDetails.js  
+import { useHistory,useParams } from "react-router-dom";
+import useFetch from "./india";
+const BlogDetails = () => {
+
+    const {id} =useParams();
+    const {data:blog,error,isPending}=useFetch('http://localhost:8000/blogs/'+id);
+    const history=useHistory()
+    const handleClick=()=>{
+
+        fetch('http://localhost:8000/blogs/' + blog.id ,{
+          method:'DELETE'  
+        }).then(()=>{
+            history.push('/');
+        })
+    }
+    return (  
+   <div className="blog-details">
+   {isPending && <div>Loading...</div>}
+   {error && <div>{error}</div>}
+   {blog &&(
+    <article>
+
+    <h2>{blog.title}</h2>
+    <p>Written by {blog.author} </p>
+    <div>{blog.body}</div>
+    <button onClick={handleClick}>delete</button>
+    </article>
+   )}
+   </div>
+    );
+}
+ 
+export default BlogDetails;
+
+
+Home.js  
+
+import BlogList from './BlogList';
+import useFetch from './india';
+const Home  = () => {
+   
+ const{data:blogs,isPending ,error}=useFetch('http://localhost:8000/blogs');
+
+    return ( 
+        <div className="home">
+            {error && <div> {error}</div>}
+            {isPending && <div>Loading...</div> }
+          {blogs && <BlogList blogs={blogs} title="All Blogs!" />}
+        </div>
+     );
+}
+ 
+export default Home;
+
+
+
+
+
+Create.js
+import { useState } from "react";
+import{useHistory} from 'react-router-dom';
+const Create = () => {
+    const [title,setTitle]=useState('');
+    const [body,setBody]=useState('');
+    const [author,setAuthor]=useState('mario');
+    const[isPending,setIsPending]=useState(false);
+    const history=useHistory();
+    const handleSubmit =(e)=>{
+     e.preventDefault();
+     const blog={title,body,author};
+     fetch('http://localhost:8000/blogs',{
+        method:'POST',
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(blog)
+     }).then(()=>{
+        console.log('new blog added');
+        setIsPending(false);
+        history.push('/');
+     })
+    }
+    return ( 
+        <div className="create">
+            <h2>Add a New Blog</h2>
+            <form onSubmit={handleSubmit}>
+                <label >Blog title:</label>
+                <input type="text"required 
+                value={title}
+                onChange={(e)=>setTitle(e.target.value)}/>
+                <label >Blog Body:</label>
+                <textarea
+                required
+                value={body}
+                onChange={(e)=>setBody(e.target.value)}>
+
+                </textarea>
+                <label >Blog author:</label>
+                <select
+                value={author} 
+                onChange={(e)=>setAuthor(e.target.value)}>
+                    <option value="mario">mario</option>
+                    <option value="yoshi">yoshi</option>
+                </select>
+                { !isPending && <button>Add Blog</button>}
+                { isPending && <button disabled >Adding blog...</button>}
+               
+               
+            </form>
+        </div>
+     );
+}
+ 
+export default Create;
+
+
+
+BLoglist.js  
+import { Link } from "react-router-dom/cjs/react-router-dom.min";
+
+const BlogList = ({blogs,title}) => {
+
+    return (  
+        <div className="blog-list">
+            <h2>{title}</h2>
+            {blogs.map((blog) =>(
+            <div className="blog-preview" key={blog.id}>
+                <Link to={`/blogs/${blog.id}`}>
+                <h2>{blog.title}</h2>
+                 <p>Written by {blog.author}</p>      
+                </Link>
+                
+                
+            </div>
+           ))}
+        </div>
+    );
+}
+ 
+export default BlogList;
+
+
+
+
+
+
+index.css  
+*{
+  margin:0;
+  font-family:"Quicksand";
+  color:#333;
+}
+.navbar{
+  padding:20px;
+  display:flex;
+  align-items: center;
+  max-width: 600px;
+  margin: 0 auto;
+  border-bottom: 1px solid #f2f2f2;
+
+}
+.navbar h1{
+  color:#f1356d;
+
+}
+.navbar .links{
+  margin-left:auto;
+}
+.navbar a{
+  margin-left:16px;
+  text-decoration:none;
+  padding: 6px;
+}
+.navbar a:hover{
+  color: #f1356d;
+}
+.content{
+  max-width: 600px;
+  margin: 40px auto ;
+  padding:20px;
+}
+.blog-preview{
+  padding:10px 16px;
+  margin:20px 0;
+  border-bottom:1px solid #fafafa;
+}
+.blog-preview:hover{
+  box-shadow:1px 3px 5px rgba(0,0,0,0.1);
+}
+.blog-preview h2{
+  font-size:20px;
+  color:#f1356d;
+  margin-bottom:8px;
+}
+.blog-preview a{
+  text-decoration: none;
+}
+.blog-details div{
+  margin:20px;
+}
+.blog-details h2{
+  font-size:20px;
+   color:#f1356d;
+   margin-bottom:10px;
+}
+.blog-details button{
+  background: #f1356d;
+  color:#fff;
+  border:0;
+  padding:8px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.create{
+  max-width: 400px;
+  margin:0 auto;
+  text-align: center;
+}
+.create h2{
+  font-size: 20px;
+  color:#f1356d;
+  margin-bottom:30px;
+}
+.create label{
+  text-align:left;
+  display:block;
+}
+.create input,.create textarea,.create select{
+  width:100%;
+  padding:6px 10px;
+  margin:10px 0;
+  border:1px solid #ddd;
+  box-sizing: border-box;
+  display:block;
+
+}
+.create button{
+  background:#f1356d;
+  color:#fff;
+  border:0;
+  padding:8px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+
+
+
+
+india.js  
+import{useState,useEffect} from 'react';
+
+const useFetch = (url) =>{
+
+    
+        const [data,setData]=useState(null);
+        const [isPending,setIsPending]=useState(true);
+        const [error,setError]=useState(null);
+        
+        useEffect(()=>{
+           const abortCont=new AbortController();
+            setTimeout(()=>{
+    
+                fetch( url,{signal:abortCont.signal})
+                .then(res =>{
+                   if(!res.ok){
+                    throw Error('could not fetch the data for that resources');
+                   }
+                    return res.json();
+                })
+                .then(data =>{
+                 
+                    setData(data);
+                    setIsPending(false);
+                    setError(null);
+                })
+                .catch(err =>{
+                    if(err.name ==='AbortError'){
+                        console.log('fetch aborted');
+                    }else{
+                    setIsPending(false);
+                    setError(err.message);
+                    }
+                })
+            },1000);
+      
+            return () => abortCont.abort();
+        },[url]);
+        return {data,isPending , error}
+}
+export default useFetch;
+
+
+
+
+Navbar.js  
+import {Link} from 'react-router-dom';
+const Navbar = () => {
+    return ( 
+        <nav className="navbar">
+            <h1>The Dojo Blog</h1>
+            <div className="links">
+               <Link to="/">Home</Link>
+                <Link to="/create">New Blog</Link>
+            </div>
+        </nav>
+     );
+}
+ 
+export default Navbar;
+
+Notfound.js  
+import {Link} from "react-router-dom";
+const NotFound = () => {
+    return (
+        <div className="not-found">
+            <h2>Sorry</h2>
+            <p>That page cannot be found</p>
+            <Link to="/">Back to the homepage...</Link>
+        </div>
+      );
+}
+ 
+export default NotFound;
